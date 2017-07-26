@@ -13,7 +13,7 @@ import java.util.Properties;
 public class MongoDbConnector {
 
 	/** File path for config.properties */
-	private static final String CONFIG_PATH = "./src/pt/tilt/sights/config.properties";
+	private static final String CONFIG_PATH = "./src/main/java/pt/tilt/sights/config.properties";
 
 	/** Properties object loaded from config.properties file */
 	private Properties properties = new Properties();
@@ -51,26 +51,23 @@ public class MongoDbConnector {
 			e.printStackTrace();
 		}
 
-		switch (properties.getProperty("environment")) {
+		String env = properties.getProperty("environment");
 
-			// SANDBOX Environment
-			case "SBX":
-				hostname = properties.getProperty("mongoDB_SBX_hostname");
-				port = properties.getProperty("mongoDB_SBX_port");
-				username = properties.getProperty("mongoDB_SBX_username");
-				password = properties.getProperty("mongoDB_SBX_password");
-				database = properties.getProperty("mongoDB_SBX_database");
-				break;
-
-			// PRODUCTION Environment
-			case "PRD":
-				hostname = properties.getProperty("mongoDB_PRD_hostname");
-				port = properties.getProperty("mongoDB_PRD_port");
-				username = properties.getProperty("mongoDB_PRD_username");
-				password = properties.getProperty("mongoDB_PRD_password");
-				database = properties.getProperty("mongoDB_PRD_database");
-				break;
-
+		// SANDBOX Environment
+		if (env.equals("SBX")) {
+			hostname = properties.getProperty("mongoDB_SBX_hostname");
+			port = properties.getProperty("mongoDB_SBX_port");
+			username = properties.getProperty("mongoDB_SBX_username");
+			password = properties.getProperty("mongoDB_SBX_password");
+			database = properties.getProperty("mongoDB_SBX_database");
+		}
+		// PRODUCTION Environment
+		else if (env.equals("PRD")) {
+			hostname = properties.getProperty("mongoDB_PRD_hostname");
+			port = properties.getProperty("mongoDB_PRD_port");
+			username = properties.getProperty("mongoDB_PRD_username");
+			password = properties.getProperty("mongoDB_PRD_password");
+			database = properties.getProperty("mongoDB_PRD_database");
 		}
 	}
 
