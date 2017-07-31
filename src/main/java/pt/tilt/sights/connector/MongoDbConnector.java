@@ -1,8 +1,15 @@
 package pt.tilt.sights.connector;
 
+import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+import pt.tilt.sights.utils.ErrorHandler;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -18,30 +25,37 @@ public class MongoDbConnector {
     /** Properties object loaded from config.properties file */
     private Properties properties = new Properties();
 
-    /** Mongo DB hostname */
+    /** MongoDB hostname */
     private String hostname;
 
-    /** Mongo DB port */
-    private String port;
+    /** MongoDB port */
+    private int port;
 
-    /** Mongo DB username */
+    /** MongoDB username */
     private String username;
 
-    /** Mongo DB password */
-    private String password;
+    /** MongoDB password */
+    private char[] password;
 
-    /** Mongo DB database */
+    /** MongoDB database */
     private String database;
 
+    /** MongoDB environment */
+    private String environment;
+
+    /** MongoDB database object */
+    private MongoDatabase mongoDatabase;
+
     /**
-     * Public constructor for Mongo DB connector.
+     * Public constructor for MongoDB connector.
      */
     public MongoDbConnector() {
         loadProperties();
+        connectToDatabase();
     }
 
     /**
-     * Loads Mongo DB configuration variables from 'config.properties' file.
+     * Loads MongoDB configuration variables from 'config.properties' file.
      */
     public void loadProperties() {
         try {
@@ -51,24 +65,46 @@ public class MongoDbConnector {
             e.printStackTrace();
         }
 
-        String env = properties.getProperty("environment");
+        environment = properties.getProperty("environment");
 
         // SANDBOX Environment
-        if (env.equals("SBX")) {
+        if (environment.equals("SBX")) {
             hostname = properties.getProperty("mongoDB_SBX_hostname");
-            port = properties.getProperty("mongoDB_SBX_port");
+            port = Integer.parseInt(properties.getProperty("mongoDB_SBX_port"));
             username = properties.getProperty("mongoDB_SBX_username");
-            password = properties.getProperty("mongoDB_SBX_password");
+            password = properties.getProperty("mongoDB_SBX_password").toCharArray();
             database = properties.getProperty("mongoDB_SBX_database");
         }
         // PRODUCTION Environment
-        else if (env.equals("PRD")) {
+        else if (environment.equals("PRD")) {
             hostname = properties.getProperty("mongoDB_PRD_hostname");
-            port = properties.getProperty("mongoDB_PRD_port");
+            port = Integer.parseInt(properties.getProperty("mongoDB_PRD_port"));
             username = properties.getProperty("mongoDB_PRD_username");
-            password = properties.getProperty("mongoDB_PRD_password");
+            password = properties.getProperty("mongoDB_PRD_password").toCharArray();
             database = properties.getProperty("mongoDB_PRD_database");
         }
     }
+
+    /**
+     * Establishes a connection to MongoDB and instantiates MongoDatabase object.
+     */
+    public void connectToDatabase() {
+        try {
+            MongoClient mongoClient;
+
+            if (environment.equals("SBX"))
+                mongoClient = new MongoClient(hostname, port);
+            else {
+                MongoCredential mongoCredential = MongoCredential.createCredential(username, database, password);
+                mongoClient = new MongoClient(new ServerAddress(hostname, port), Arrays.asList(mongoCredential));
+            }
+
+            mongoDatabase = mongoClient.getDatabase(database);
+        } catch (Exception e) {
+            ErrorHandler.printExceptionMessage(e);
+        }
+    }
+
+
 
 }
