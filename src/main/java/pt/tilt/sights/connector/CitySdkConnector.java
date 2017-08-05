@@ -1,11 +1,18 @@
 package pt.tilt.sights.connector;
 
+import citysdk.tourism.client.exceptions.*;
+import citysdk.tourism.client.poi.lists.ListPOIS;
+import citysdk.tourism.client.poi.lists.ListPointOfInterest;
+import citysdk.tourism.client.poi.single.PointOfInterest;
+import citysdk.tourism.client.requests.Parameter;
+import citysdk.tourism.client.requests.ParameterList;
+import citysdk.tourism.client.requests.TourismClient;
+import citysdk.tourism.client.requests.TourismClientFactory;
+import citysdk.tourism.client.terms.ParameterTerms;
 import pt.tilt.sights.utils.ErrorHandler;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.List;
 
 /**
  * @author Valter Nepomuceno
@@ -13,6 +20,8 @@ import java.net.URL;
  * @version 1.0
  */
 public class CitySdkConnector {
+
+    private TourismClient tourismClient;
 
     /** CitySDK API endpoint for the city of Lisbon */
     public static final String LISBON_ENDPOINT_URI = "http://tourism.citysdk.cm-lisboa.pt/resources";
@@ -29,24 +38,46 @@ public class CitySdkConnector {
     /** CitySDK API endpoint for the city of Rome */
     public static final String ROME_ENDPOINT_URI = "http://citysdk.inroma.roma.it/CitySDK/resources";
 
-    /** HTTP method to make the request to CitySDK API */
-    private final String httpMethod = "GET";
-
     /**
      *
      * @param endpointUri
      */
-    public void sendHttpGet(String endpointUri) {
+    public CitySdkConnector(String endpointUri) {
         try {
-            URL url = new URL(endpointUri);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod(httpMethod);
-            int httpResponseCode = connection.getResponseCode();
-            System.out.println(httpResponseCode);
-        } catch (MalformedURLException mue) {
-            ErrorHandler.printExceptionMessage(mue);
+            tourismClient = TourismClientFactory.getInstance().getClient(endpointUri);
+            tourismClient.useVersion("1.0");
         } catch (IOException ioe) {
             ErrorHandler.printExceptionMessage(ioe);
+        } catch (UnknownErrorException uee) {
+            ErrorHandler.printExceptionMessage(uee);
+        } catch (ServerErrorException see) {
+            ErrorHandler.printExceptionMessage(see);
+        }
+    }
+
+    public void listSights() {
+        ParameterList paramList = new ParameterList();
+
+        try {
+            paramList.add(new Parameter(ParameterTerms.CATEGORY, "Miradouros"));
+            paramList.add(new Parameter(ParameterTerms.LIMIT, 50));
+
+            ListPointOfInterest response = tourismClient.getPois(paramList);
+            List<PointOfInterest> listPois = response.getPois();
+        } catch (InvalidParameterException ipe) {
+            ErrorHandler.printExceptionMessage(ipe);
+        } catch (InvalidValueException ive) {
+            ErrorHandler.printExceptionMessage(ive);
+        } catch (IOException ioe) {
+            ErrorHandler.printExceptionMessage(ioe);
+        } catch (ResourceNotAllowedException rnae) {
+            ErrorHandler.printExceptionMessage(rnae);
+        } catch (UnknownErrorException uee) {
+            ErrorHandler.printExceptionMessage(uee);
+        } catch (VersionNotAvailableException vnae) {
+            ErrorHandler.printExceptionMessage(vnae);
+        } catch (ServerErrorException see) {
+            ErrorHandler.printExceptionMessage(see);
         }
     }
 

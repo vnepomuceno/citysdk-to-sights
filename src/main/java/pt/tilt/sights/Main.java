@@ -12,13 +12,8 @@ public class Main {
 
     public static void main(String[] args) {
         MongoDbConnector mongoDbConnector = new MongoDbConnector();
-        CitySdkConnector citySdkConnector = new CitySdkConnector();
-
-        citySdkConnector.sendHttpGet(CitySdkConnector.LISBON_ENDPOINT_URI);
-        citySdkConnector.sendHttpGet(CitySdkConnector.AMSTERDAM_ENDPOINT_URI);
-        citySdkConnector.sendHttpGet(CitySdkConnector.HELSINKI_ENDPOINT_URI);
-        citySdkConnector.sendHttpGet(CitySdkConnector.ROME_ENDPOINT_URI);
-        citySdkConnector.sendHttpGet(CitySdkConnector.LAMIA_ENDPOINT_URI);
+        CitySdkConnector citySdkConnector = new CitySdkConnector(CitySdkConnector.LISBON_ENDPOINT_URI);
+        citySdkConnector.listSights();
     }
 
 }
