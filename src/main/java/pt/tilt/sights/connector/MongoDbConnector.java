@@ -1,5 +1,6 @@
 package pt.tilt.sights.connector;
 
+import citysdk.tourism.client.poi.single.PointOfInterest;
 import com.mongodb.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -23,33 +24,36 @@ public class MongoDbConnector {
     private static final String CONFIG_PATH = "./src/main/java/pt/tilt/sights/config.properties";
 
     /** Properties object loaded from config.properties file */
-    private Properties properties = new Properties();
+    private static Properties properties = new Properties();
 
     /** MongoDB hostname */
-    private String hostname;
+    private static String hostname;
 
     /** MongoDB port */
-    private int port;
+    private static int port;
 
     /** MongoDB username */
-    private String username;
+    private static String username;
 
     /** MongoDB password */
-    private char[] password;
+    private static char[] password;
 
     /** MongoDB database */
-    private String database;
+    private static String database;
 
     /** MongoDB environment */
-    private String environment;
+    private static String environment;
+
+    /** MongoDB database collection */
+    private static String collectionName;
 
     /** MongoDB database object */
-    private MongoDatabase mongoDatabase;
+    private static MongoDatabase mongoDatabase;
 
     /**
      * Public constructor for MongoDB connector.
      */
-    public MongoDbConnector() {
+    public static void init() {
         loadProperties();
         connectToDatabase();
     }
@@ -57,7 +61,7 @@ public class MongoDbConnector {
     /**
      * Loads MongoDB configuration variables from 'config.properties' file.
      */
-    public void loadProperties() {
+    public static void loadProperties() {
         try {
             InputStream input = new FileInputStream(CONFIG_PATH);
             properties.load(input);
@@ -66,13 +70,12 @@ public class MongoDbConnector {
         }
 
         environment = properties.getProperty("environment");
+        collectionName = properties.getProperty("collection");
 
         // SANDBOX Environment
         if (environment.equals("SBX")) {
             hostname = properties.getProperty("mongoDB_SBX_hostname");
             port = Integer.parseInt(properties.getProperty("mongoDB_SBX_port"));
-            username = properties.getProperty("mongoDB_SBX_username");
-            password = properties.getProperty("mongoDB_SBX_password").toCharArray();
             database = properties.getProperty("mongoDB_SBX_database");
         }
         // PRODUCTION Environment
@@ -88,7 +91,7 @@ public class MongoDbConnector {
     /**
      * Establishes a connection to MongoDB and instantiates MongoDatabase object.
      */
-    public void connectToDatabase() {
+    public static void connectToDatabase() {
         try {
             MongoClient mongoClient;
 
@@ -105,6 +108,35 @@ public class MongoDbConnector {
         }
     }
 
+    /**
+     * Parses Point of Interest object and stores it in MongoDB database.
+     * @param poi Point of Interest object.
+     * @param city City enum.
+     */
+    public static void storeSightObject(PointOfInterest poi, CitySdkConnector.City city) {
+        Document location = new Document();
+        location.append("city", city.value);
+        if (poi.getLocation().getPoint().size() > 0)
+            location.append("coordinates", poi.getLocation().getPoint().get(0).getPoint().getPosList());
+        location.append("createdAt", poi.getLocation().getCreated().toString());
+        location.append("updatedAt", poi.getLocation().getUpdated().toString());
 
+        Document author = new Document();
+        author.append("source", poi.getAuthor().getValue());
+        author.append("createdAt", poi.getAuthor().getCreated().toString());
+
+        Document sight = new Document();
+        if (poi.getLabel().size() > 0)
+            sight.append("name", poi.getLabel().get(0).getValue());
+        sight.append("citySdkId", poi.getId());
+        sight.append("base", poi.getBase());
+        sight.append("location", location);
+        sight.append("author", author);
+        sight.append("createdAt", poi.getCreated().toString());
+        sight.append("updatedAt", poi.getUpdated().toString());
+
+        MongoCollection mongoCollection = mongoDatabase.getCollection(collectionName);
+        mongoCollection.insertOne(sight);
+    }
 
 }

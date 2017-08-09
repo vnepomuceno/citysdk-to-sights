@@ -1,7 +1,6 @@
 package pt.tilt.sights.connector;
 
 import citysdk.tourism.client.exceptions.*;
-import citysdk.tourism.client.poi.lists.ListPOIS;
 import citysdk.tourism.client.poi.lists.ListPointOfInterest;
 import citysdk.tourism.client.poi.single.PointOfInterest;
 import citysdk.tourism.client.requests.Parameter;
@@ -21,7 +20,26 @@ import java.util.List;
  */
 public class CitySdkConnector {
 
+    /** Sight city enum */
+    public enum City {
+        LISBON ("Lisbon"),
+        AMSTERDAM ("Amsterdam"),
+        HELSINKI ("Helsinki"),
+        LAMIA ("Lamia"),
+        ROME ("Rome");
+
+        public String value;
+
+        City (String value) {
+            this.value = value;
+        }
+    }
+
+    /** CitySDK Tourism client */
     private TourismClient tourismClient;
+
+    /** Sight city */
+    private City city;
 
     /** CitySDK API endpoint for the city of Lisbon */
     public static final String LISBON_ENDPOINT_URI = "http://tourism.citysdk.cm-lisboa.pt/resources";
@@ -39,11 +57,22 @@ public class CitySdkConnector {
     public static final String ROME_ENDPOINT_URI = "http://citysdk.inroma.roma.it/CitySDK/resources";
 
     /**
-     *
-     * @param endpointUri
+     * City SDK public constructor.
+     * @param endpointUri CitySDK endpoint URI.
      */
     public CitySdkConnector(String endpointUri) {
         try {
+            if (endpointUri.equals(LISBON_ENDPOINT_URI))
+                city = City.LISBON;
+            else if (endpointUri.equals(AMSTERDAM_ENDPOINT_URI))
+                city = City.AMSTERDAM;
+            else if (endpointUri.equals(HELSINKI_ENDPOINT_URI))
+                city = City.HELSINKI;
+            else if (endpointUri.equals(LAMIA_ENDPOINT_URI))
+                city = City.LAMIA;
+            else if (endpointUri.equals(ROME_ENDPOINT_URI))
+                city = City.ROME;
+
             tourismClient = TourismClientFactory.getInstance().getClient(endpointUri);
             tourismClient.useVersion("1.0");
         } catch (IOException ioe) {
@@ -55,6 +84,7 @@ public class CitySdkConnector {
         }
     }
 
+    /** Queries CitySDK Tourism client for sights and stores them in MongoDB database. */
     public void listSights() {
         ParameterList paramList = new ParameterList();
 
@@ -63,7 +93,10 @@ public class CitySdkConnector {
             paramList.add(new Parameter(ParameterTerms.LIMIT, 50));
 
             ListPointOfInterest response = tourismClient.getPois(paramList);
-            List<PointOfInterest> listPois = response.getPois();
+            List<PointOfInterest> listPointsOfInterest = response.getPois();
+
+            for (PointOfInterest poi : listPointsOfInterest)
+                MongoDbConnector.storeSightObject(poi, city);
         } catch (InvalidParameterException ipe) {
             ErrorHandler.printExceptionMessage(ipe);
         } catch (InvalidValueException ive) {

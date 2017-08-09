@@ -11,7 +11,7 @@ import pt.tilt.sights.connector.MongoDbConnector;
 public class Main {
 
     public static void main(String[] args) {
-        MongoDbConnector mongoDbConnector = new MongoDbConnector();
+        MongoDbConnector.init();
         CitySdkConnector citySdkConnector = new CitySdkConnector(CitySdkConnector.LISBON_ENDPOINT_URI);
         citySdkConnector.listSights();
     }
