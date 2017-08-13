@@ -1,16 +1,22 @@
 package pt.tilt.sights.connector;
 
+import citysdk.tourism.client.poi.base.POIBaseType;
+import citysdk.tourism.client.poi.base.POITermType;
 import citysdk.tourism.client.poi.single.PointOfInterest;
 import com.mongodb.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.BsonArray;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import pt.tilt.sights.utils.ErrorHandler;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -126,8 +132,55 @@ public class MongoDbConnector {
         author.append("createdAt", poi.getAuthor().getCreated().toString());
 
         Document sight = new Document();
-        if (poi.getLabel().size() > 0)
-            sight.append("name", poi.getLabel().get(0).getValue());
+        if (poi.getLabel().size() > 0) {
+            ArrayList<Document> labels = new ArrayList<Document>();
+            for (POITermType termType : poi.getLabel()) {
+                Document label = new Document();
+                label.append("term", termType.getTerm());
+                label.append("value", termType.getValue());
+                label.append("lang", termType.getLang());
+                label.append("createdAt", termType.getCreated().toString());
+                label.append("updatedAt", termType.getUpdated().toString());
+                labels.add(label);
+            }
+            sight.append("labels", labels);
+        }
+
+        if (poi.getDescription().size() > 0) {
+            ArrayList<Document> descriptions = new ArrayList<Document>();
+            for (POIBaseType baseType : poi.getDescription()) {
+                Document description = new Document();
+                description.append("value", baseType.getValue());
+                description.append("lang", poi.getDescription().get(0).getLang());
+                description.append("createdAt", poi.getDescription().get(0).getCreated().toString());
+                description.append("updatedAt", poi.getDescription().get(0).getUpdated().toString());
+                descriptions.add(description);
+            }
+            sight.append("descriptions", descriptions);
+        }
+
+        if (poi.getLink().size() > 0) {
+            ArrayList<Document> images = new ArrayList<Document>();
+            ArrayList<Document> websites = new ArrayList<Document>();
+            for (POITermType termType : poi.getLink()) {
+                Document linkDocument = new Document();
+                linkDocument.append("type", termType.getType());
+                linkDocument.append("href", termType.getHref());
+                linkDocument.append("createdAt", termType.getCreated().toString());
+                linkDocument.append("updatedAt", termType.getUpdated().toString());
+                if (termType.getTerm().equals("related")) {
+                    images.add(linkDocument);
+                } else if (termType.getTerm().equals("source")) {
+                    websites.add(linkDocument);
+                }
+            }
+
+            if (images.size() > 0)
+                sight.append("images", images);
+            if (websites.size() > 0)
+                sight.append("websites", websites);
+        }
+
         sight.append("citySdkId", poi.getId());
         sight.append("base", poi.getBase());
         sight.append("location", location);
