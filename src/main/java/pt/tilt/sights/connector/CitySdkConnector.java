@@ -35,11 +35,27 @@ public class CitySdkConnector {
         }
     }
 
+    /** Sight country enum */
+    public enum Country {
+        PORTUGAL ("Portugal"),
+        HOLLAND ("Holland"),
+        FINLAND ("Finland"),
+        GREECE ("Greece"),
+        ITALY ("Italy");
+
+        public String value;
+
+        Country (String value) { this.value = value; }
+    }
+
     /** CitySDK Tourism client */
     private TourismClient tourismClient;
 
     /** Sight city */
     private City city;
+
+    /** Sight country */
+    private Country country;
 
     /** CitySDK API endpoint for the city of Lisbon */
     public static final String LISBON_ENDPOINT_URI = "http://tourism.citysdk.cm-lisboa.pt/resources";
@@ -62,16 +78,22 @@ public class CitySdkConnector {
      */
     public CitySdkConnector(String endpointUri) {
         try {
-            if (endpointUri.equals(LISBON_ENDPOINT_URI))
+            if (endpointUri.equals(LISBON_ENDPOINT_URI)) {
                 city = City.LISBON;
-            else if (endpointUri.equals(AMSTERDAM_ENDPOINT_URI))
+                country = Country.PORTUGAL;
+            } else if (endpointUri.equals(AMSTERDAM_ENDPOINT_URI)) {
                 city = City.AMSTERDAM;
-            else if (endpointUri.equals(HELSINKI_ENDPOINT_URI))
+                country = Country.HOLLAND;
+            } else if (endpointUri.equals(HELSINKI_ENDPOINT_URI)) {
                 city = City.HELSINKI;
-            else if (endpointUri.equals(LAMIA_ENDPOINT_URI))
+                country = Country.FINLAND;
+            } else if (endpointUri.equals(LAMIA_ENDPOINT_URI)) {
                 city = City.LAMIA;
-            else if (endpointUri.equals(ROME_ENDPOINT_URI))
+                country = Country.GREECE;
+            } else if (endpointUri.equals(ROME_ENDPOINT_URI)) {
                 city = City.ROME;
+                country = Country.ITALY;
+            }
 
             tourismClient = TourismClientFactory.getInstance().getClient(endpointUri);
             tourismClient.useVersion("1.0");
@@ -96,7 +118,7 @@ public class CitySdkConnector {
             List<PointOfInterest> listPointsOfInterest = response.getPois();
 
             for (PointOfInterest poi : listPointsOfInterest)
-                MongoDbConnector.storeSightObject(poi, city);
+                MongoDbConnector.storeSightObject(poi, city, country);
         } catch (InvalidParameterException ipe) {
             ErrorHandler.printExceptionMessage(ipe);
         } catch (InvalidValueException ive) {

@@ -29,6 +29,15 @@ public class MongoDbConnector {
     /** File path for config.properties */
     private static final String CONFIG_PATH = "./src/main/java/pt/tilt/sights/config.properties";
 
+    /** Point Of Interest card address prefix */
+    private static final String POI_CARD_ADDRESS_PREFIX = "ADR;WORK";
+
+    /** Point Of Interest card phone prefix */
+    private static final String POI_CARD_PHONE_PREFIX = "TEL;WORK:";
+
+    /** Point Of Interest card email prefix */
+    private static final String POI_CARD_EMAIL_PREFIX = "EMAIL;INTERNET:";
+
     /** Properties object loaded from config.properties file */
     private static Properties properties = new Properties();
 
@@ -119,18 +128,15 @@ public class MongoDbConnector {
      * @param poi Point of Interest object.
      * @param city City enum.
      */
-    public static void storeSightObject(PointOfInterest poi, CitySdkConnector.City city) {
-        Document location = new Document();
-        location.append("city", city.value);
-        if (poi.getLocation().getPoint().size() > 0)
-            location.append("coordinates", poi.getLocation().getPoint().get(0).getPoint().getPosList());
-        location.append("createdAt", poi.getLocation().getCreated().toString());
-        location.append("updatedAt", poi.getLocation().getUpdated().toString());
+    public static void storeSightObject(PointOfInterest poi, CitySdkConnector.City city,
+                                        CitySdkConnector.Country country) {
 
+        /* Accesses and populates POI author data */
         Document author = new Document();
         author.append("source", poi.getAuthor().getValue());
         author.append("createdAt", poi.getAuthor().getCreated().toString());
 
+        /* Accesses and populates POI general data */
         Document sight = new Document();
         if (poi.getLabel().size() > 0) {
             ArrayList<Document> labels = new ArrayList<Document>();
@@ -146,6 +152,7 @@ public class MongoDbConnector {
             sight.append("labels", labels);
         }
 
+        /* Accesses and populates POI description data */
         if (poi.getDescription().size() > 0) {
             ArrayList<Document> descriptions = new ArrayList<Document>();
             for (POIBaseType baseType : poi.getDescription()) {
@@ -159,6 +166,7 @@ public class MongoDbConnector {
             sight.append("descriptions", descriptions);
         }
 
+        /* Accesses and populates POI links data */
         if (poi.getLink().size() > 0) {
             ArrayList<Document> images = new ArrayList<Document>();
             ArrayList<Document> websites = new ArrayList<Document>();
@@ -174,13 +182,89 @@ public class MongoDbConnector {
                     websites.add(linkDocument);
                 }
             }
-
             if (images.size() > 0)
                 sight.append("images", images);
             if (websites.size() > 0)
                 sight.append("websites", websites);
         }
 
+        /* Accesses and populates POI schedules data */
+        ArrayList<Document> schedules = new ArrayList<Document>();
+        if (poi.getTime().size() > 0) {
+            for (POITermType termType : poi.getTime()) {
+                Document scheduleDocument = new Document();
+                scheduleDocument.append(termType.getTerm(), termType.getValue());
+                scheduleDocument.append("createdAt", termType.getCreated());
+                scheduleDocument.append("updatedAt", termType.getUpdated());
+                schedules.add(scheduleDocument);
+            }
+        }
+
+        /* Parses CitySDK POI addresses, phone numbers and emails */
+        String poiAddressCard = poi.getLocation().getAddress().getValue();
+        String phoneNumber = "", fullAddress = "", emailAddress = "", facebookPage = "";
+        String[] poiAddressCardSplit = poiAddressCard.split("\r\n");
+        for (String cardSplit : poiAddressCardSplit) {
+            if (cardSplit.startsWith(POI_CARD_PHONE_PREFIX)) {
+                phoneNumber = cardSplit.substring(POI_CARD_PHONE_PREFIX.length());
+            } else if (cardSplit.startsWith(POI_CARD_EMAIL_PREFIX)) {
+                emailAddress = cardSplit.substring(POI_CARD_EMAIL_PREFIX.length());
+            } else if (cardSplit.startsWith(POI_CARD_ADDRESS_PREFIX)) {
+                String[] addressSplit = cardSplit.split(";");
+                for (String split : addressSplit) {
+                    if (!split.equals("") && !split.startsWith("ADR") && !split.startsWith("WORK")) {
+                        if (split.contains("\n")) {
+                            fullAddress = split.split("\n")[0];
+                            break;
+                        } else {
+                            fullAddress = split;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        /* Parses CitySDK POI facebook pages and email addresses */
+        for (POITermType poiLink : poi.getLink()) {
+            if (poiLink.getType().startsWith("text")) {
+                if (poiLink.getHref().contains("facebook")) {
+                    facebookPage = poiLink.getHref();
+                } else if (poiLink.getHref().contains("@")) {
+                    emailAddress = poiLink.getHref();
+                }
+            }
+        }
+
+        /* Accesses and populates POI contact data */
+        Document contact = new Document();
+        if (!phoneNumber.isEmpty())
+            contact.append("phoneNumber", phoneNumber);
+        if (!emailAddress.isEmpty())
+            contact.append("emailAddress", emailAddress);
+        if (!facebookPage.isEmpty())
+            contact.append("facebook", facebookPage);
+        if (!phoneNumber.isEmpty() || !facebookPage.isEmpty() || !emailAddress.isEmpty())
+            sight.append("contact", contact);
+
+        /* Accesses and populates POI address data */
+        Document location = new Document();
+        if (!fullAddress.isEmpty())
+            location.append("address", fullAddress);
+
+        /* Accesses and populates POI location data */
+        location.append("city", city.value);
+        location.append("country", country.value);
+        if (poi.getLocation().getPoint().size() > 0)
+            location.append("coordinates", poi.getLocation().getPoint().get(0).getPoint().getPosList());
+        location.append("createdAt", poi.getLocation().getCreated().toString());
+        location.append("updatedAt", poi.getLocation().getUpdated().toString());
+
+        /* Accesses and populates POI schedule data */
+        if (schedules.size() > 0)
+            sight.append("schedules", schedules);
+
+        /* Accesses and populates remaining POI data */
         sight.append("citySdkId", poi.getId());
         sight.append("base", poi.getBase());
         sight.append("location", location);
@@ -188,6 +272,7 @@ public class MongoDbConnector {
         sight.append("createdAt", poi.getCreated().toString());
         sight.append("updatedAt", poi.getUpdated().toString());
 
+        /* Stores sight document in MongoDB collection */
         MongoCollection mongoCollection = mongoDatabase.getCollection(collectionName);
         mongoCollection.insertOne(sight);
     }
