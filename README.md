@@ -163,19 +163,31 @@ Follows an example of a MongoDB document resultant from processing the above res
             "updatedAt": "Thu Sep 21 19:57:31 WEST 2017"
         }
     ],
+    "contact": {
+        "phoneNumber": "+351 213 912 600",
+        "emailAddress": "daev@cm-lisboa.pt"
+    },
+    "schedules": [
+        {
+            "open": "24h",
+            "createdAt": "Thu Sep 21 23:28:43 WEST 2017",
+            "updatedAt": "Thu Sep 21 23:28:43 WEST 2017"
+        }
+    ],
     "location": {
+        "address": "Largo das Portas do Sol",
         "city": "Lisbon",
         "country": "Portugal",
         "coordinates": "38.7123638082457 -9.13036785646916",
-        "createdAt": "Thu Sep 21 19:57:31 WEST 2017",
-        "updatedAt": "Thu Sep 21 19:57:31 WEST 2017"
+        "createdAt": "Thu Sep 21 23:25:06 WEST 2017",
+        "updatedAt": "Thu Sep 21 23:25:06 WEST 2017"
     },
-    "citySdkId": "52d7bf7e723e8e0b0cc0913b",
-    "base": "http://tourism.citysdk.cm-lisboa.pt/pois/",
     "author": {
         "source": "open-data",
         "createdAt": "Thu Sep 21 19:57:31 WEST 2017"
     },
+    "citySdkId": "52d7bf7e723e8e0b0cc0913b",
+    "base": "http://tourism.citysdk.cm-lisboa.pt/pois/",
     "createdAt": "Tue Mar 11 16:35:03 WET 2014",
     "updatedAt": "Thu Sep 21 19:57:31 WEST 2017"
 }

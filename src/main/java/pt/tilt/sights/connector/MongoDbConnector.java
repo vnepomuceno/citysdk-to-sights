@@ -172,8 +172,8 @@ public class MongoDbConnector {
             ArrayList<Document> websites = new ArrayList<Document>();
             for (POITermType termType : poi.getLink()) {
                 Document linkDocument = new Document();
-                linkDocument.append("type", termType.getType());
                 linkDocument.append("href", termType.getHref());
+                linkDocument.append("type", termType.getType());
                 linkDocument.append("createdAt", termType.getCreated().toString());
                 linkDocument.append("updatedAt", termType.getUpdated().toString());
                 if (termType.getTerm().equals("related")) {
@@ -194,8 +194,8 @@ public class MongoDbConnector {
             for (POITermType termType : poi.getTime()) {
                 Document scheduleDocument = new Document();
                 scheduleDocument.append(termType.getTerm(), termType.getValue());
-                scheduleDocument.append("createdAt", termType.getCreated());
-                scheduleDocument.append("updatedAt", termType.getUpdated());
+                scheduleDocument.append("createdAt", termType.getCreated().toString());
+                scheduleDocument.append("updatedAt", termType.getUpdated().toString());
                 schedules.add(scheduleDocument);
             }
         }
@@ -265,9 +265,9 @@ public class MongoDbConnector {
             sight.append("schedules", schedules);
 
         /* Accesses and populates remaining POI data */
+        sight.append("location", location);
         sight.append("citySdkId", poi.getId());
         sight.append("base", poi.getBase());
-        sight.append("location", location);
         sight.append("author", author);
         sight.append("createdAt", poi.getCreated().toString());
         sight.append("updatedAt", poi.getUpdated().toString());
